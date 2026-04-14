@@ -1,0 +1,21 @@
+# User-specific files (never commit these)
+settings.json
+settings.local.json
+
+# Memory and state
+projects/
+memory/
+
+# Cache and temp
+cache/
+.DS_Store
+*.log
+
+# Session data
+sessions/
+history.jsonl
+stats-cache.json
+
+# IDE files
+.vscode/
+.idea/

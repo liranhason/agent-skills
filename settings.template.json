@@ -1,0 +1,11 @@
+{
+  "model": "sonnet",
+  "env": {
+    "EXAMPLE_VAR": "value"
+  },
+  "hooks": {},
+  "statusLine": {
+    "type": "text",
+    "text": "Claude Code"
+  }
+}
