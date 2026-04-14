@@ -1,164 +1,117 @@
 # HSN Claude Configuration
 
-Personal Claude Code configuration repo for team sharing and cross-machine setup.
-
-## What's Included
-
-- **Commands**: `/ask` and `/plan` slash commands
-- **Skills**: `plan-execution` skill (auto-activates when working with plans)
-- **Settings Template**: Base configuration (customize for your setup)
+Claude Code configuration — `/plan` command, `/ask` command, and plan execution skill.
 
 ## Installation
 
-### New Machine Setup
-
 ```bash
-# 1. Clone this repo
-cd ~/git
-git clone <your-repo-url> hsn-claude
-
-# 2. Create .claude directory if it doesn't exist
-mkdir -p ~/.claude
-
-# 3. Copy/symlink files
-cp -r ~/git/hsn-claude/commands ~/.claude/
-cp -r ~/git/hsn-claude/skills ~/.claude/
-
-# 4. (Optional) Copy settings template and customize
-cp ~/git/hsn-claude/settings.template.json ~/.claude/settings.json
-# Edit ~/.claude/settings.json with your preferences
-```
-
-### Alternative: Symlink Method
-
-If you want changes to auto-sync:
-
-```bash
-# After cloning, symlink instead of copying
+git clone <your-repo-url> ~/git/hsn-claude
 ln -s ~/git/hsn-claude/commands ~/.claude/commands
 ln -s ~/git/hsn-claude/skills ~/.claude/skills
 ```
 
-**Warning**: With symlinks, changes in your `.claude/` directory will modify the repo. Good for personal use, risky for team sharing.
+---
 
-## Usage
+## `/plan` — Structured Agentic Development
 
-### `/ask` Command
+`/plan` breaks large features into milestones and tasks, tracks progress in a markdown file, and executes each task with acceptance criteria and an automatic commit. Pair it with `/loop` and Claude works through an entire feature autonomously while you do something else.
 
-Read-only Q&A mode. Claude answers questions without modifying any files.
+### Commands
 
-```bash
-/ask How does the auth system work?
-/ask What's the difference between X and Y?
-```
+| Command | What it does |
+|---------|-------------|
+| `/plan <description>` | Research the codebase and generate a structured plan file |
+| `/plan <TICKET-ID>` | Same, but fetches ticket details from Linear/GitHub/Jira first |
+| `/plan next` | Execute the next unchecked task (asks for confirmation) |
+| `/plan next --yes` | Execute the next task without confirmation |
+| `/plan next plans/foo.plan.md` | Target a specific plan file |
+| `/plan status` | Show progress across all active plans |
+| `/plan review` | Re-evaluate the plan against current code state |
 
-**Use cases:**
-- Quick questions about the codebase
-- Understanding architecture without changes
-- Research mode
-
-### `/plan` Command
-
-Create and manage implementation plans for large features.
+**Typical workflow:**
 
 ```bash
-# Create a new plan
-/plan Add user authentication system
-
-# Check status of all plans
-/plan status
-
-# Continue with next task
-/plan next
-
-# Execute specific task
-/plan next 2.1
+/plan Add JWT authentication        # 1. Claude researches codebase, writes plans/jwt-auth.plan.md
+# Review and edit the plan file
+/plan next                          # 2. Execute task 1.1, commit, mark done
+/plan next                          # 3. Execute task 1.2, commit, mark done
+# ...or use /loop to run all tasks automatically (see below)
 ```
 
-**Plan workflow:**
-1. `/plan <description>` - Creates a structured plan with milestones and tasks
-2. `/plan next` - Execute the next available task
-3. Plan auto-updates with progress and completion dates
-4. Each task commits code + plan updates together
+---
 
-**Auto-execute entire plan with /loop:**
+### vs. Ralph Loop
+
+Ralph Wiggum is a popular Claude Code technique: a Stop hook blocks Claude's session exit and re-feeds the same prompt, looping until Claude outputs a completion string. It's zero-setup and works well for unbounded tasks.
+
+`/loop /plan next --yes` is a **structured Ralph loop** — same autonomous iteration, but each loop executes a named task with explicit acceptance criteria and makes a git commit before advancing.
+
+| | Ralph Loop | `/loop /plan next --yes` |
+|--|--|--|
+| **Structure** | Unstructured — same prompt re-fed each iteration | Structured — next `[ ]` task with files, deps, acceptance criteria |
+| **Progress tracking** | None | `[x]` checkboxes + completion timestamps in plan file |
+| **Completion signal** | String match (e.g. `"DONE"`) or `--max-iterations` | "All tasks complete!" when no `[ ]` remain |
+| **Commits** | None | One commit per task: `Plan 2.1: <title>` |
+| **Dependency ordering** | None | Won't run a task until its deps are `[x]` |
+| **Resumability** | Restart from scratch if interrupted | Stop and resume anywhere — progress persists in the plan file |
+| **Loop mechanism** | Stop hook (inside session) | `/loop` skill (new prompt each iteration) |
+
+**Bottom line:** Ralph wins on zero-setup for exploratory tasks. `/plan` + `/loop` wins on auditability, resumability, and correctness — you get a full git history and can always inspect exactly which task failed and why.
+
+---
+
+### Auto-executing with `/loop`
+
+#### Example 1: Run an entire plan unattended
+
+You've reviewed the plan and it looks good. Let Claude execute every task while you take a break.
 
 ```bash
-# Execute all tasks in a plan automatically
-/loop /plan next --yes @plans/my-feature.plan.md
-
-# Self-paced: Claude decides when to run next task
-/loop /plan next --yes @plans/my-feature.plan.md
+/loop /plan next --yes plans/dark-mode.plan.md
 ```
 
-This will:
-- Execute task 1.1, commit, mark complete
-- Execute task 1.2, commit, mark complete
-- Continue until all tasks are done
-- Stop automatically when plan is complete
+What happens:
+1. Finds task 1.1, reads full plan for context, implements, runs tests, commits `Plan 1.1: Define CSS variable palettes`
+2. Marks `[ ]` → `[x]`, finds task 2.1
+3. Implements, commits `Plan 2.1: Add theme toggle to settings panel`
+4. No more tasks → prints "All tasks complete!" and the loop stops
 
-**Use cases:**
-- Execute a fully-defined plan end-to-end
-- Let Claude work through tasks while you're away
-- Useful for well-scoped, low-risk implementation tasks
+#### Example 2: Run only the first milestone, then review
 
-**Safety notes:**
-- Review the plan carefully before looping
-- Best for plans with clear acceptance criteria
-- Can cancel anytime with `/stop` or by interrupting
-- Each task commits separately (easy to revert if needed)
+If you want a human checkpoint between milestones, just interrupt after milestone 1 completes and inspect before resuming.
 
-### `plan-execution` Skill
-
-Auto-activates when working with plan files. Handles:
-- Task dependency checking
-- Progress tracking
-- Verification against acceptance criteria
-- Atomic commits per task
-
-**Trigger phrases:**
-- "continue the plan"
-- "what's the plan status"
-- "run task 2.1"
-- References to `plans/*.plan.md` files
-
-## Team Sharing
-
-**Option 1: Direct Copy (Recommended)**
-
-Team members clone and copy files to their `~/.claude/` directory. Each person maintains their own settings.
-
-**Option 2: Fork Pattern**
-
-1. Team lead maintains this repo
-2. Team members fork it
-3. Merge updates from upstream as needed
-4. Each fork can have personal customizations
-
-## File Structure
-
+```bash
+/loop /plan next --yes plans/jwt-auth.plan.md
+# Watch output — when milestone 1 tasks are all done, press Ctrl+C
+# Review the code, test it, adjust the plan if needed
+/loop /plan next --yes plans/jwt-auth.plan.md   # resume milestone 2
 ```
-hsn-claude/
-├── README.md                    # This file
-├── settings.template.json       # Base settings (customize locally)
-├── commands/
-│   ├── ask.md                  # /ask command
-│   └── plan.md                 # /plan command
-├── skills/
-│   └── plan-execution/
-│       └── SKILL.md            # Plan execution skill
-└── plans/
-    └── examples/
-        ├── add-feature.plan.md      # Minimal 2-milestone plan
-        ├── api-refactor.plan.md     # Medium plan with diagram
-        └── auth-system.plan.md      # Large 4-milestone plan
+
+Each task was committed separately, so `git log` shows clean progress and any milestone is easy to roll back.
+
+#### Example 3: Resume a plan that's already in-progress
+
+The plan is 40% done from a previous session. Pick up exactly where you left off:
+
+```bash
+/plan status                        # see which tasks are done and what's next
+/loop /plan next --yes              # auto-detects the in-progress plan, resumes from first [ ]
 ```
+
+Claude re-reads the full plan on each iteration — completed tasks give it context about what was already built, future tasks show what constraints to keep in mind.
+
+### Safety
+
+- Review the plan file before looping — it's plain markdown, easy to edit
+- `--yes` skips confirmation prompts; omit it to approve each task manually
+- Each task commits separately — easy to `git revert` a single bad task without losing everything
+- Cancel anytime with `Ctrl+C`; the plan file preserves progress so the next `/plan next` picks up where you left off
 
 ---
 
 ## Plan File Format
 
-Plans live in `plans/*.plan.md` in your project repo (not this config repo). The `/plan` command creates and manages them.
+Plans live in `plans/*.plan.md` in your **project repo** (not this config repo). The `/plan` command creates and manages them.
 
 ### Anatomy of a Plan File
 
@@ -214,12 +167,12 @@ End-to-end checklist — commands to run, behaviors to confirm — after all mil
 ### Example: `/plan status` Output
 
 ```
-📋 Plan: Add JWT Authentication System
+Plan: Add JWT Authentication System
 Status: in-progress | Created: 2026-04-10
 
 Progress: 5/14 tasks complete (36%)
 
-## Milestones
+Milestones
 ✓ 1. Data Layer (3/3) — COMPLETE
   ✓ 1.1 Add User model with hashed password field
   ✓ 1.2 Add password hashing utilities
@@ -240,11 +193,10 @@ Dependencies: 2.2
 
 ### Why This Format Is Powerful
 
-1. **Resumability** — Stop mid-task, come back weeks later, pick up exactly where you left off. No mental overhead reconstructing context.
+1. **Resumability** — Stop mid-task, come back weeks later, pick up exactly where you left off.
 2. **Parallelism** — Dependencies are explicit. Tasks with no deps can run concurrently across people or agents.
 3. **Auditability** — Every architectural decision is documented with the reasoning. Future maintainers understand *why*, not just *what*.
-4. **Incremental progress** — A 50-task feature becomes 50 small, testable units. Each one shippable and verifiable.
-5. **Collaboration** — Multiple people (or Claude agents) can work on independent milestones simultaneously without stepping on each other.
+4. **Incremental progress** — A 50-task feature becomes 50 small, testable units. Each one verifiable before the next starts.
 
 ### Example Plans
 
@@ -256,115 +208,13 @@ See `plans/examples/` in this repo for annotated examples:
 | [`api-refactor.plan.md`](./plans/examples/api-refactor.plan.md) | 3 milestones, 5 tasks | Dependency tracking, flowchart diagram, incremental migration |
 | [`auth-system.plan.md`](./plans/examples/auth-system.plan.md) | 4 milestones, 9 tasks | Full-stack feature with parallel milestone tracks |
 
-## Customization
+---
 
-### Adding Your Own Commands
+## `/ask` Command
 
-1. Create a new `.md` file in `commands/`
-2. Add frontmatter with `description` and `allowed-tools`
-3. Write the command logic
-4. Commit and push (or keep local)
-
-### Adding Your Own Skills
-
-1. Create a directory under `skills/`
-2. Add `SKILL.md` with skill logic
-3. Skills auto-load on Claude Code startup
-
-### Settings Customization
-
-Edit `~/.claude/settings.json` (NOT the template) to add:
-- Environment variables (`env`)
-- Model preferences (`model`)
-- Hooks (see Claude Code docs)
-- Status line customization
-
-**Example settings.json:**
-
-```json
-{
-  "model": "opus",
-  "env": {
-    "MY_API_KEY": "..."
-  },
-  "hooks": {
-    "PreToolUse": [...]
-  }
-}
-```
-
-## What NOT to Commit
-
-- `~/.claude/projects/` - User-specific memory
-- `~/.claude/settings.json` - Personal settings (may contain secrets)
-- `~/.claude/cache/` - Cache files
-- `~/.claude/history.jsonl` - Command history
-
-The `.gitignore` in this repo excludes these automatically.
-
-## Updating
-
-### Pull Latest Changes
+Read-only Q&A mode — Claude answers questions without modifying any files. Useful for understanding code, architecture, or investigating before making changes.
 
 ```bash
-cd ~/git/hsn-claude
-git pull
-
-# If you copied files (not symlinked):
-cp -r commands ~/.claude/
-cp -r skills ~/.claude/
+/ask How does the auth system work?
+/ask What's the difference between X and Y?
 ```
-
-### Contribute Changes
-
-```bash
-cd ~/git/hsn-claude
-
-# Make changes to commands/ or skills/
-# Test in your local .claude/ directory first
-
-git add .
-git commit -m "Add new command for X"
-git push
-```
-
-## Troubleshooting
-
-**Commands not showing up:**
-
-```bash
-# Verify files are in the right place
-ls ~/.claude/commands/
-# Should show: ask.md, plan.md
-
-# Restart Claude Code or reload
-```
-
-**Skills not activating:**
-
-```bash
-# Check skill structure
-ls ~/.claude/skills/plan-execution/
-# Should show: SKILL.md
-
-# Verify SKILL.md has proper frontmatter
-```
-
-**Settings not loading:**
-
-```bash
-# Verify JSON syntax
-cat ~/.claude/settings.json | jq .
-
-# Common issue: trailing commas (not valid JSON)
-```
-
-## References
-
-- [Claude Code Documentation](https://claude.ai/code)
-- [Custom Skills Guide](https://docs.anthropic.com/en/docs/claude-code/custom-skills)
-- [Slash Commands](https://docs.anthropic.com/en/docs/claude-code/commands)
-
-## License
-
-MIT (or whatever you prefer)
