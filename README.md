@@ -144,10 +144,117 @@ hsn-claude/
 ├── commands/
 │   ├── ask.md                  # /ask command
 │   └── plan.md                 # /plan command
-└── skills/
-    └── plan-execution/
-        └── SKILL.md            # Plan execution skill
+├── skills/
+│   └── plan-execution/
+│       └── SKILL.md            # Plan execution skill
+└── plans/
+    └── examples/
+        ├── add-feature.plan.md      # Minimal 2-milestone plan
+        ├── api-refactor.plan.md     # Medium plan with diagram
+        └── auth-system.plan.md      # Large 4-milestone plan
 ```
+
+---
+
+## Plan File Format
+
+Plans live in `plans/*.plan.md` in your project repo (not this config repo). The `/plan` command creates and manages them.
+
+### Anatomy of a Plan File
+
+```markdown
+# Plan: <Title>
+
+| Field   | Value        |
+|---------|--------------|
+| Status  | draft        |   ← draft | in-progress | complete
+| Created | 2026-04-10   |
+| Ticket  | ENG-123      |   ← or N/A
+| Branch  | feature/foo  |   ← or TBD
+
+## Context
+Why this work exists — the problem, the constraint, the goal.
+
+## Architecture Decisions
+Key choices made upfront so implementers don't re-litigate them mid-task.
+
+## Diagrams (optional)
+Mermaid flowcharts or sequence diagrams.
+
+## Milestones Overview
+Numbered list of major phases.
+
+---
+
+## Milestone 1: <Name>
+
+### 1.1 [ ] Task title
+
+- **Files:** path/to/file.py, path/to/other.py
+- **What:** Step-by-step instructions for the implementer.
+- **Acceptance:** How to verify this task is done (command to run, behavior to observe).
+- **Dependencies:** None | 1.1, 2.3
+
+### 1.2 [x] Completed task title *(completed 2026-04-11)*
+
+...
+
+## Verification
+
+End-to-end checklist — commands to run, behaviors to confirm — after all milestones are done.
+```
+
+### Task Checkboxes
+
+| Symbol | Meaning |
+|--------|---------|
+| `[ ]` | Not started |
+| `[x]` | Complete (add `*(completed YYYY-MM-DD)*` inline) |
+
+### Example: `/plan status` Output
+
+```
+📋 Plan: Add JWT Authentication System
+Status: in-progress | Created: 2026-04-10
+
+Progress: 5/14 tasks complete (36%)
+
+## Milestones
+✓ 1. Data Layer (3/3) — COMPLETE
+  ✓ 1.1 Add User model with hashed password field
+  ✓ 1.2 Add password hashing utilities
+  ✓ 1.3 Add JWT creation and validation utilities
+
+✓ 2. Auth Endpoints (2/3) — IN PROGRESS
+  ✓ 2.1 Implement POST /api/auth/register
+  ✓ 2.2 Implement POST /api/auth/login
+  ◯ 2.3 Implement POST /api/auth/refresh and logout
+
+◯ 3. Route Protection (0/2)
+◯ 4. Frontend Integration (0/2)
+
+Next task: 2.3 Implement POST /api/auth/refresh and logout
+Files: src/routers/auth.py
+Dependencies: 2.2
+```
+
+### Why This Format Is Powerful
+
+1. **Resumability** — Stop mid-task, come back weeks later, pick up exactly where you left off. No mental overhead reconstructing context.
+2. **Parallelism** — Dependencies are explicit. Tasks with no deps can run concurrently across people or agents.
+3. **Auditability** — Every architectural decision is documented with the reasoning. Future maintainers understand *why*, not just *what*.
+4. **Incremental progress** — A 50-task feature becomes 50 small, testable units. Each one shippable and verifiable.
+5. **Collaboration** — Multiple people (or Claude agents) can work on independent milestones simultaneously without stepping on each other.
+
+### Example Plans
+
+See `plans/examples/` in this repo for annotated examples:
+
+| Example | Complexity | What it shows |
+|---------|-----------|---------------|
+| [`add-feature.plan.md`](./plans/examples/add-feature.plan.md) | 2 milestones, 2 tasks | Minimal structure for a simple UI feature |
+| [`api-refactor.plan.md`](./plans/examples/api-refactor.plan.md) | 3 milestones, 5 tasks | Dependency tracking, flowchart diagram, incremental migration |
+| [`auth-system.plan.md`](./plans/examples/auth-system.plan.md) | 4 milestones, 9 tasks | Full-stack feature with parallel milestone tracks |
 
 ## Customization
 
