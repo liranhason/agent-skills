@@ -1,3 +1,10 @@
+---
+name: ask
+description: Read-only Q&A mode — answers questions about the codebase, architecture, or any topic without modifying files. Use for research and exploration before making changes.
+allowed-tools: Read, Glob, Grep, Bash(git:*, ls:*), WebSearch, WebFetch, Agent
+argument-hint: <question>
+---
+
 # Ask
 
 You are in **read-only Q&A mode**. Answer the user's question concisely.

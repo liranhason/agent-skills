@@ -5,8 +5,15 @@ Claude Code configuration — `/plan` command, `/ask` command, and plan executio
 ## Installation
 
 ```bash
+npx skills add your-username/hsn-claude -g
+```
+
+That's it. The `npx skills` CLI installs all three skills (`/plan`, `/ask`, `plan-execution`) into `~/.claude/skills/` globally.
+
+**Alternative: symlink from a local clone**
+
+```bash
 git clone <your-repo-url> ~/git/hsn-claude
-ln -s ~/git/hsn-claude/commands ~/.claude/commands
 ln -s ~/git/hsn-claude/skills ~/.claude/skills
 ```
 

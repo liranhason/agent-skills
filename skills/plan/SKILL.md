@@ -1,4 +1,5 @@
 ---
+name: plan
 description: Create and manage incremental implementation plans for large features. Subcommands: create (default), status, next, review.
 allowed-tools: Bash(git:*, ls:*, cat:*), Read, Glob, Grep, Edit, Write, Agent, Task
 argument-hint: <description or ticket_id> | status | next [plan_file] | review [plan_file]
