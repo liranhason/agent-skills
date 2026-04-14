@@ -81,6 +81,33 @@ Create and manage implementation plans for large features.
 3. Plan auto-updates with progress and completion dates
 4. Each task commits code + plan updates together
 
+**Auto-execute entire plan with /loop:**
+
+```bash
+# Execute all tasks in a plan automatically
+/loop /plan next --yes @plans/my-feature.plan.md
+
+# Self-paced: Claude decides when to run next task
+/loop /plan next --yes @plans/my-feature.plan.md
+```
+
+This will:
+- Execute task 1.1, commit, mark complete
+- Execute task 1.2, commit, mark complete
+- Continue until all tasks are done
+- Stop automatically when plan is complete
+
+**Use cases:**
+- Execute a fully-defined plan end-to-end
+- Let Claude work through tasks while you're away
+- Useful for well-scoped, low-risk implementation tasks
+
+**Safety notes:**
+- Review the plan carefully before looping
+- Best for plans with clear acceptance criteria
+- Can cancel anytime with `/stop` or by interrupting
+- Each task commits separately (easy to revert if needed)
+
 ### `plan-execution` Skill
 
 Auto-activates when working with plan files. Handles:
