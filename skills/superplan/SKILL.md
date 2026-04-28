@@ -75,6 +75,16 @@ Break the feature into **milestones** (product deliverables) and **tasks** (deve
 - List specific files to create/modify
 - Declare dependencies on other tasks
 
+**Deliverable Spec (when applicable):** If this milestone produces a concrete artifact that can be exhaustively listed — CLI commands, API endpoints, UI screens, config keys, data schema — add a **"### Deliverable Spec"** section immediately before the task list. Format by domain:
+- **CLI:** `command | required args | optional args | description` table
+- **REST API:** `endpoint | method | params | response shape` table
+- **UI:** key screens, actions, states
+- **Config/schema:** key, type, default, description
+
+For milestones whose output is a code quality improvement (refactor, perf, test coverage, bug fix), skip the table and add a **"### Before/After"** section instead — one or two sentences: "Currently X happens; after this milestone Y happens instead." This is the minimum that makes the deliverable unambiguous.
+
+Every milestone needs either a Deliverable Spec table OR a Before/After statement. Never just narrative.
+
 **Diagrams:** When the feature involves architecture, data flow, or multi-component interactions, include **mermaid diagrams** in the plan (e.g., flowcharts for data flow, sequence diagrams for API interactions, component diagrams for architecture). Add these in a `## Diagrams` section or inline within the relevant milestone.
 
 #### 4. Generate Plan File
@@ -128,6 +138,19 @@ Break the feature into **milestones** (product deliverables) and **tasks** (deve
 **Success criteria:** <Observable user outcome, not just "tests pass." Example: "A developer who has never seen Canopy can `canopy create` from an example template, connect to it, and have a useful conversation within 5 minutes.">
 
 **Key decisions:** <If this milestone involves choices (which templates, which API design, which defaults), state what was chosen and why. This prevents the implementing agent from second-guessing or making different choices.>
+
+### Deliverable Spec
+
+<Include ONE of the following — never omit both:>
+
+<**Option A — Concrete artifact** (CLI commands, API endpoints, UI screens, config schema): a structured table the implementing developer can use as a checklist. Example for a CLI milestone:>
+| Command | Required args | Optional args | Description |
+|---------|--------------|---------------|-------------|
+| `cx slos list` | — | `--order-by` | List all SLOs |
+| `cx slos get <ID>` | `ID` | — | Get SLO details |
+
+<**Option B — Before/After** (refactors, bug fixes, perf, test coverage): one or two sentences that state what changes.>
+<Example: "Currently `cx --help` shows 37 commands in a flat alphabetical list. After this milestone it shows commands organized under labeled domain headings.">
 
 ### 1.1 [ ] <Task Title>
 - **Files:** `path/to/file1`, `path/to/file2`
@@ -362,6 +385,7 @@ If the project has specific commands for code checks, PR creation, or ticket man
 - Creating a plan for a trivial task (just do it directly)
 - Writing milestone descriptions that only say what to build, not who benefits or why
 - Making user-facing choices (which examples, which defaults, which names) without documenting the reasoning in the milestone
+- Writing a milestone with only narrative ("users can manage SLOs") and no Deliverable Spec table or Before/After statement — the developer should never have to infer what concretely ships
 
 ## Good Practices
 
@@ -373,3 +397,4 @@ If the project has specific commands for code checks, PR creation, or ticket man
 - Edit the plan file directly when scope changes
 - Write milestone descriptions as if a PM is justifying them — who benefits, what changes for the user
 - Document the "why" behind choices so the implementing agent doesn't second-guess them
+- Every milestone has a Deliverable Spec table (for features with enumerable artifacts) OR a Before/After statement (for refactors/fixes) — pick whichever fits, never omit both
